@@ -131,3 +131,9 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Notebook
+*.ipynb
+
+# Some dependencies
+*.tar.gz
