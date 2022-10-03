@@ -65,8 +65,13 @@ def get_conf_from_evn():
         # Raw data period
         start_datetime = os.getenv("APP_TIME_START")  # yyyy-MM-dd'T'HH:mm:ss
         end_datetime = os.getenv("APP_TIME_END")  # yyyy-MM-dd'T'HH:mm:ss
-        conf["start"] = pendulum.parse(start_datetime)
-        conf["end"] = pendulum.parse(end_datetime)
+        conf["APP_TIMEZONE"] = os.getenv("APP_TIMEZONE")
+        conf["start"] = pendulum.parse(start_datetime).in_timezone(conf["APP_TIMEZONE"])
+        conf["end"] = pendulum.parse(end_datetime).in_timezone(conf["APP_TIMEZONE"])
+
+        # todo: temp patch for day resolution parsing, so later with [AICNS-59] resolution will be subdivided.
+        conf["end"] = conf["end"].subtract(minutes=1)
+
         # Etc App config
         conf["APP_STAGE_LEVEL"] = os.getenv(
             "APP_STAGE_LEVEL", default="MISSING"
