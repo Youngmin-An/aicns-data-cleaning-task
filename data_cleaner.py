@@ -10,7 +10,8 @@ import os
 
 if __name__ == "__main__":
     # Initialize app
-    spark = SparkSession.builder.enableHiveSupport().getOrCreate()
+    spark = SparkSession.builder.config("hive.exec.dynamic.partition", "true")\
+    .config("hive.exec.dynamic.partition.mode", "nonstrict").enableHiveSupport().getOrCreate()
     
     app_conf = get_conf_from_evn()
     app_conf["sql_context"] = spark
