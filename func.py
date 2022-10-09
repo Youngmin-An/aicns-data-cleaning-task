@@ -6,11 +6,16 @@ from utils.feature_util import mongo_to_dict
 from featureMetadataFetcher import FeatureMetadataFetcher, SensorMetadataFetcher
 from feature.feature import Feature
 from univariate.duplicate import DuplicateReport, DuplicateProcessor
-from univariate.missing_value import MissingValueDetector, MissingValueReport, MissingValueHandler
+from univariate.missing_value import (
+    MissingValueDetector,
+    MissingValueReport,
+    MissingValueHandler,
+)
 from univariate.analyzer import AnalysisReport, RegularityAnalyzer, Analyzer
 from enum import Enum
 import pyspark.sql.functions as F
 from helpers.url import HDFSBuilder
+
 
 class Stage(Enum):
     CLEANED = -1
@@ -112,7 +117,9 @@ def save_to_data_warehouse(
     """
     # todo: transaction
     table_name = table_prefix_map[stage] + app_conf["FEATURE_ID"]
-    SparkSession.getActiveSession().sql(f"CREATE TABLE IF NOT EXISTS {table_name} ({time_col_name} BIGINT, {data_col_name} DOUBLE) PARTITIONED BY (year int, month int, day int) STORED AS PARQUET LOCATION 'cleaning/{table_name}'")
+    SparkSession.getActiveSession().sql(
+        f"CREATE TABLE IF NOT EXISTS {table_name} ({time_col_name} BIGINT, {data_col_name} DOUBLE) PARTITIONED BY (year int, month int, day int) STORED AS PARQUET LOCATION 'cleaning/{table_name}'"
+    )
     period = pendulum.period(app_conf["start"], app_conf["end"])
 
     # Create partition columns(year, month, day) from timestamp
@@ -125,7 +132,6 @@ def save_to_data_warehouse(
         )
     # Save
     partition_df.write.format("hive").mode("append").insertInto(table_name)
-
 
 
 def load_raw_data(app_conf, feature, time_col_name, data_col_name):
@@ -141,9 +147,7 @@ def load_raw_data(app_conf, feature, time_col_name, data_col_name):
     return feature_raw_df
 
 
-def deduplicate(
-    ts: DataFrame, time_col_name: str, data_col_name: str, app_conf
-):
+def deduplicate(ts: DataFrame, time_col_name: str, data_col_name: str, app_conf):
     duplicate_report: DuplicateReport = DuplicateProcessor.detect_duplicates(
         ts, time_col_name, data_col_name
     )  # todo: send report to notification(?) system
@@ -153,7 +157,9 @@ def deduplicate(
     return dropped_df
 
 
-def process_outliers(ts: DataFrame, time_col_name: str, data_col_name: str) -> DataFrame:
+def process_outliers(
+    ts: DataFrame, time_col_name: str, data_col_name: str
+) -> DataFrame:
     """
 
     :param ts:
@@ -166,7 +172,9 @@ def process_outliers(ts: DataFrame, time_col_name: str, data_col_name: str) -> D
     return ts
 
 
-def process_missing_values(ts: DataFrame, time_col_name: str, data_col_name: str) -> DataFrame:
+def process_missing_values(
+    ts: DataFrame, time_col_name: str, data_col_name: str
+) -> DataFrame:
     """
 
     :param ts:
@@ -178,14 +186,20 @@ def process_missing_values(ts: DataFrame, time_col_name: str, data_col_name: str
     regularity_report = __get_regularity_report(ts, time_col_name, data_col_name)
     # Detect missing values
     missing_value_detector = MissingValueDetector(regularity_report)
-    miss_report = missing_value_detector.detect_missing_values(ts, time_col_name, data_col_name)  # todo: propagate miss report
+    miss_report = missing_value_detector.detect_missing_values(
+        ts, time_col_name, data_col_name
+    )  # todo: propagate miss report
 
     # Threat missing values
     missing_value_handler = MissingValueHandler()
-    return missing_value_handler.handle_missing_value(miss_report.unmarked["marking_df"], time_col_name, data_col_name)
+    return missing_value_handler.handle_missing_value(
+        miss_report.unmarked["marking_df"], time_col_name, data_col_name
+    )
 
 
-def __get_regularity_report(ts: DataFrame, time_col_name: str, data_col_name: str) -> AnalysisReport:
+def __get_regularity_report(
+    ts: DataFrame, time_col_name: str, data_col_name: str
+) -> AnalysisReport:
     """
 
     :param ts:
