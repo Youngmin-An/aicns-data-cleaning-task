@@ -10,16 +10,20 @@ import os
 
 if __name__ == "__main__":
     # Initialize app
-    spark = (
-        SparkSession.builder.config("hive.exec.dynamic.partition", "true")
-        .config("hive.exec.dynamic.partition.mode", "nonstrict")
-        .enableHiveSupport()
-        .getOrCreate()
-    )
-
     app_conf = get_conf_from_evn()
-    app_conf["sql_context"] = spark
     app_conf["APP_STAGE_ENUM"] = stage_map[app_conf["APP_STAGE_LEVEL"]]
+
+    SparkSession.builder.config("spark.hadoop.hive.exec.dynamic.partition", "true")\
+        .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
+
+    # [AICNS-61]
+    if app_conf["SPARK_EXTRA_CONF_PATH"] != "":
+        config_dict = parse_spark_extra_conf(app_conf)
+        for conf in config_dict.items():
+            SparkSession.builder.config(conf[0], conf[1])
+
+    spark = SparkSession.builder.enableHiveSupport().getOrCreate()
+    app_conf["sql_context"] = spark
 
     # Get feature metadata
     sensor = get_feature_metadata(app_conf)

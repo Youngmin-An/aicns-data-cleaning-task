@@ -71,6 +71,8 @@ def get_conf_from_evn():
         start_datetime = os.getenv("APP_TIME_START")  # yyyy-MM-dd'T'HH:mm:ss
         end_datetime = os.getenv("APP_TIME_END")  # yyyy-MM-dd'T'HH:mm:ss
         conf["APP_TIMEZONE"] = os.getenv("APP_TIMEZONE")
+
+        conf["SPARK_EXTRA_CONF_PATH"] = os.getenv("SPARK_EXTRA_CONF_PATH", default="")  # [AICNS-61]
         conf["start"] = pendulum.parse(start_datetime).in_timezone(conf["APP_TIMEZONE"])
         conf["end"] = pendulum.parse(end_datetime).in_timezone(conf["APP_TIMEZONE"])
 
@@ -101,6 +103,19 @@ def append_partition_cols(ts: DataFrame, time_col_name: str, data_col_name):
         )
         .sort(time_col_name)
     )
+
+
+def parse_spark_extra_conf(app_conf):
+    """
+    Parse spark-default.xml style config file.
+    It is for [AICNS-61] that is spark operator take only spark k/v confs issue.
+    :param app_conf:
+    :return: Dict (key: conf key, value: conf value)
+    """
+    with open(app_conf["SPARK_EXTRA_CONF_PATH"], "r") as cf:
+        lines = cf.read().splitlines()
+        config_dict = dict(list(filter(lambda splited: len(splited) == 2, (map(lambda line: line.split(), lines)))))
+    return config_dict
 
 
 def save_to_data_warehouse(
