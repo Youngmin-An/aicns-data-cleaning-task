@@ -118,7 +118,7 @@ def save_to_data_warehouse(
     # todo: transaction
     table_name = table_prefix_map[stage] + app_conf["FEATURE_ID"]
     SparkSession.getActiveSession().sql(
-        f"CREATE TABLE IF NOT EXISTS {table_name} ({time_col_name} BIGINT, {data_col_name} DOUBLE) PARTITIONED BY (year int, month int, day int) STORED AS PARQUET LOCATION 'cleaning/{table_name}'"
+        f"CREATE TABLE IF NOT EXISTS {table_name} ({time_col_name} BIGINT, {data_col_name} DOUBLE) PARTITIONED BY (year int, month int, day int) STORED AS PARQUET"
     )
     period = pendulum.period(app_conf["start"], app_conf["end"])
 
